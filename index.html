@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+
+    <title>status.pile</title>
+    <style>
+      iframe {
+        height: 410px;
+        width: 420px;
+        background-color: ivory;
+      }
+      h3 {
+        text-align: center;
+        font-weight: 500;
+        color: navy;
+      }
+      * {
+        box-sizing: border-box;
+        padding: 1px;
+        margin: 0.3px;
+        background-color: beige;
+      }
+      th {
+        font-size: 20px;
+        font-weight: 100;
+        border: 1px solid #999;
+        background-color: chartreuse;
+      }
+      .rotated {
+        font-size: medium;
+        float: left;
+        transform: rotate(-90deg);
+        filter: none; /* Mandatory for IE9 to show the vertical text correctly */
+        white-space: nowrap !important;
+        max-width: 15px;
+        overflow: visible;
+        margin-top: 200px;
+        font-style: italic;
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- Div where Vue runs -->
+    <div id="app">
+      <h3>Status Piles as of {{timeStamp}}</h3>
+      <table v-for="env in environemnts">
+        <tr>
+          <th></th>
+          <th v-for="e in env">{{e|subStr}}</th>
+        </tr>
+        <tr>
+          <td class="rotated">{{env[0]|subStr2}}</td>
+          <td v-for="e in env">
+            <iframe :src="e"></iframe>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <script>
+      var app = new Vue({
+        el: "#app",
+        data: {
+          timeStamp: "",
+          environemnts: {
+            feature: [
+              "https://feature-fxweb.apiture-comm-nonprod.com/piles/status.pile",
+              "https://feature2-fxweb.apiture-comm-nonprod.com/piles/status.pile",
+              "https://feature3-fxweb.apiture-comm-nonprod.com/piles/status.pile",
+              "https://feature4-fxweb.apiture-comm-nonprod.com/piles/status.pile",
+              "https://feature5-fxweb.apiture-comm-nonprod.com/piles/status.pile",
+              "https://feature6-fxweb.apiture-comm-nonprod.com/piles/status.pile",
+            ],
+            qa: [
+              "https://qa-fxweb.apiture-comm-nonprod.com/piles/status.pile",
+              "https://qa2-fxweb.apiture-comm-nonprod.com/piles/status.pile",
+              "https://qa-hot-fxweb.apiture-comm-nonprod.com/piles/status.pile",
+              "https://feature7-fxweb.apiture-comm-nonprod.com/piles/status.pile",
+              "https://feature8-fxweb.apiture-comm-nonprod.com/piles/status.pile",
+            ],
+            preprod: [
+              "https://cat-fxweb.apiture-comm-preprod.com/piles/status.pile",
+              "https://cat2-fxweb.apiture-comm-preprod.com/piles/status.pile",
+              "https://cat3-fxweb.apiture-comm-preprod.com/piles/status.pile",
+              "https://cat-hot-fxweb.apiture-comm-preprod.com/piles/status.pile",
+            ],
+            prod: [
+              "https://prodwest.secure.fundsxpress.com/piles/status.pile",
+              "https://secure.fundsxpress.com/piles/status.pile",
+            ],
+          },
+        },
+        filters: {
+          subStr: function (str) {
+            return str.substring(8, str.lastIndexOf("/piles"));
+          },
+          subStr2: function (str) {
+            if (str.includes("prodwest")) {
+              return "PROD";
+            } else {
+              var s = str.substring(
+                str.lastIndexOf("comm-"),
+                str.lastIndexOf(".com")
+              );
+              return s.substring(5).toUpperCase();
+            }
+          },
+        },
+        mounted() {
+          const today = new Date();
+          const date =
+            today.getMonth() +
+            1 +
+            "/" +
+            today.getDate() +
+            "/" +
+            today.getFullYear();
+          const time =
+            today.getHours() +
+            ":" +
+            today.getMinutes() +
+            ":" +
+            today.getSeconds();
+          const dateTime = date + " " + time;
+          this.timeStamp = dateTime;
+        },
+      });
+    </script>
+  </body>
+</html>
