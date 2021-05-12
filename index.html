@@ -3,77 +3,134 @@
   <head>
     <meta charset="UTF-8" />
     <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
-
     <title>status.pile</title>
     <style>
-      iframe {
-        height: 410px;
-        width: 420px;
-        background-color: ivory;
-      }
-      h3 {
-        text-align: center;
-        font-weight: 500;
-        color: navy;
-      }
-      * {
-        box-sizing: border-box;
-        padding: 1px;
-        margin: 0.3px;
-        background-color: beige;
-      }
-      th {
-        font-size: 20px;
-        font-weight: 100;
-        border: 1px solid #999;
-        background-color: chartreuse;
-      }
-      .rotated {
-        font-size: medium;
-        float: left;
-        transform: rotate(-90deg);
-        filter: none; /* Mandatory for IE9 to show the vertical text correctly */
-        white-space: nowrap !important;
-        max-width: 15px;
-        overflow: visible;
-        margin-top: 200px;
-        font-style: italic;
-      }
+      @import "main.css";
     </style>
   </head>
 
   <body>
     <!-- Div where Vue runs -->
     <div id="app">
-      <h3>Status Piles as of {{timeStamp}}</h3>
-      <table v-for="env in environemnts">
-        <tr>
-          <th></th>
-          <th v-for="e in env">{{e|subStr}}</th>
-        </tr>
-        <tr>
-          <td class="rotated">{{env[0]|subStr2}}</td>
-          <td v-for="e in env">
-            <iframe :src="e"></iframe>
-          </td>
-        </tr>
-      </table>
+      <header>
+        <nav>
+          <ul>
+            <li v-for="(tab, tabName) in tabs" :key="tabName">
+              <button
+                class="tab"
+                @click="setTabActive(tabName)"
+                :class="{'active': tabName === activeTab}"
+              >
+                <span class="tab-copy">{{ tabName }}</span>
+                <span class="tab-background">
+                  <span class="tab-rounding left"></span>
+                  <span class="tab-rounding right"></span>
+                </span>
+              </button>
+            </li>
+          </ul>
+        </nav>
+      </header>
+      <div>
+        <transition name="fade" mode="out-in" appear :duration="450">
+          <tab-content
+            v-for="(tabContent, t) in tabs"
+            :data="tabContent"
+            :key="'content'+t"
+            v-if="t === activeTab"
+            inline-template
+          >
+            <div>
+              <div>
+                <!-- <h1>{{data.title}}</h1> -->
+                <table class="frames">
+                  <tr>
+                    <th v-for="(d, index) in data.body" v-if="index<4">
+                      {{d | subStr('d')}}
+                    </th>
+                  </tr>
+
+                  <tr>
+                    <td v-for="(d, index) in data.body" v-if="index<4">
+                      <iframe id="frame" :src="d" @load="iframeStyles"></iframe>
+                    </td>
+                  </tr>
+                  <tr>
+                    <th v-for="(d, index) in data.body" v-if="index>=4">
+                      {{d}}
+                    </th>
+                  </tr>
+                  <tr>
+                    <td v-for="(d, index) in data.body" v-if="index>=4">
+                      <iframe id="frame" :src="d"></iframe>
+                    </td>
+                  </tr>
+                </table>
+              </div>
+            </div>
+          </tab-content>
+        </transition>
+      </div>
     </div>
 
     <script>
       var app = new Vue({
         el: "#app",
         data: {
+          message: "status piles",
+          tabs: {
+            FEATURE: {
+              title: "nonprod",
+              body: [],
+            },
+            QA: {
+              title: "nonprod",
+              body: [],
+            },
+            CAT: {
+              title: "preprod",
+              body: [],
+            },
+            PROD: {
+              title: "prod",
+              body: [],
+            },
+          },
+          activeTab: "FEATURE",
           timeStamp: "",
-          environemnts: {
-            feature: [""],
-            qa: [""],
-            preprod: [""],
-            prod: [""],
+        },
+        computed: {
+          tabContent() {
+            return this.tabs[this.activeTab];
+          },
+        },
+        methods: {
+          setTabActive(tab) {
+            this.activeTab = tab;
+          },
+          iframeStyles() {
+            this.frame = this.$refs.iframeContent.contentWindow;
+            const style =
+              ".layout__wrapper {background:" +
+              this.background +
+              ";} " +
+              "body {color:" +
+              this.text +
+              ";} ";
+            this.frame.postMessage(style, "*");
+          },
+        },
+        components: {
+          TabContent: {
+            props: {
+              data: Object,
+            },
           },
         },
         filters: {
-          subStr: function (str) {
+          subStr: "json",
+          function(value) {
+            var str = JSON.stringify(value);
             return str.substring(8, str.lastIndexOf("/piles"));
           },
           subStr2: function (str) {
@@ -105,6 +162,13 @@
             today.getSeconds();
           const dateTime = date + " " + time;
           this.timeStamp = dateTime;
+          window.addEventListener("message", function (e) {
+            if (e.origin === "https://app.theparentapp.com") {
+              var style = document.createElement("style");
+              style.textContent = e.data;
+              document.head.appendChild(style);
+            }
+          });
         },
       });
     </script>
